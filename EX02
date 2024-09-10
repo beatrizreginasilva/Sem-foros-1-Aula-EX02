@@ -1,0 +1,95 @@
+package SOI7;
+
+import java.util.Random;
+import java.util.concurrent.Semaphore;
+
+class EX02 extends Thread {
+    private String nome;
+    private String pista;
+    private Semaphore pistaSemaforo;
+    private Semaphore areaDecolagemSemaforo;
+    private Random random = new Random();
+
+    public EX02(String nome, String pista, Semaphore pistaSemaforo, Semaphore areaDecolagemSemaforo) {
+        this.nome = nome;
+        this.pista = pista;
+        this.pistaSemaforo = pistaSemaforo;
+        this.areaDecolagemSemaforo = areaDecolagemSemaforo;
+    }
+
+    @Override
+    public void run() {
+        try {
+            // Pede permissão para entrar na área de decolagem 
+            areaDecolagemSemaforo.acquire();
+            System.out.println(nome + " entrou na área de decolagem.");
+
+            // Pede permissão para usar a pista
+            pistaSemaforo.acquire();
+            System.out.println(nome + " usando a pista " + pista);
+
+            // Fases da decolagem
+            manobra();
+            taxiar();
+            decolagem();
+            afastamento();
+
+            // Libera a pista para outro avião
+            System.out.println(nome + " liberou a pista " + pista);
+            pistaSemaforo.release();
+
+            // Libera a área de decolagem
+            System.out.println(nome + " deixou a área de decolagem.");
+            areaDecolagemSemaforo.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void manobra() throws InterruptedException {
+        int tempo = 300 + random.nextInt(400); // 300 a 700 ms
+        System.out.println(nome + " está na fase de manobra por " + tempo + "ms.");
+        Thread.sleep(tempo);
+    }
+
+    private void taxiar() throws InterruptedException {
+        int tempo = 500 + random.nextInt(500); // 500 a 1000 ms
+        System.out.println(nome + " está na fase de taxiar por " + tempo + "ms.");
+        Thread.sleep(tempo);
+    }
+
+    private void decolagem() throws InterruptedException {
+        int tempo = 600 + random.nextInt(200); // 600 a 800 ms
+        System.out.println(nome + " está na fase de decolagem por " + tempo + "ms.");
+        Thread.sleep(tempo);
+    }
+
+    private void afastamento() throws InterruptedException {
+        int tempo = 300 + random.nextInt(500); // 300 a 800 ms
+        System.out.println(nome + " está na fase de afastamento por " + tempo + "ms.");
+        Thread.sleep(tempo);
+    }
+}
+
+public class aero {
+    public static void main(String[] args) {
+        int numAvioes = 12;
+
+        // Semáforos para controlar a pista e a decolagem
+        Semaphore pistaNorteSemaforo = new Semaphore(1); // Apenas 1 pista norte
+        Semaphore pistaSulSemaforo = new Semaphore(1);   // Apenas 1 pista sul
+        Semaphore areaDecolagemSemaforo = new Semaphore(2); // Apenas 2 aviões na área de decolagem ao mesmo tempo
+
+        Random random = new Random();
+
+        // Criação e início aviões
+        for (int i = 1; i <= numAvioes; i++) {
+            String nomeAviao = "Avião " + i;
+            String pistaEscolhida = random.nextBoolean() ? "Norte" : "Sul";
+            Semaphore pistaSemaforo = pistaEscolhida.equals("Norte") ? pistaNorteSemaforo : pistaSulSemaforo;
+
+            EX02 aviao = new EX02(nomeAviao, pistaEscolhida, pistaSemaforo, areaDecolagemSemaforo);
+            aviao.start();
+        }
+    }
+}
